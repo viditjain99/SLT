@@ -1,0 +1,89 @@
+{
+    "epoch": 3.0,
+    "predict_bleu_1": {
+        "bleu": 0.9627071062457762,
+        "brevity_penalty": 0.9889635221049743,
+        "length_ratio": 0.9890239783856805,
+        "precisions": [
+            0.9734505719651699
+        ],
+        "reference_length": 11844,
+        "translation_length": 11714
+    },
+    "predict_bleu_2": {
+        "bleu": 0.9450744903207859,
+        "brevity_penalty": 0.9889635221049743,
+        "length_ratio": 0.9890239783856805,
+        "precisions": [
+            0.9734505719651699,
+            0.938118349822662
+        ],
+        "reference_length": 11844,
+        "translation_length": 11714
+    },
+    "predict_bleu_3": {
+        "bleu": 0.9294955990999636,
+        "brevity_penalty": 0.9889635221049743,
+        "length_ratio": 0.9890239783856805,
+        "precisions": [
+            0.9734505719651699,
+            0.938118349822662,
+            0.9091376826507512
+        ],
+        "reference_length": 11844,
+        "translation_length": 11714
+    },
+    "predict_bleu_4": {
+        "bleu": 0.9147569399380061,
+        "brevity_penalty": 0.9889635221049743,
+        "length_ratio": 0.9890239783856805,
+        "precisions": [
+            0.9734505719651699,
+            0.938118349822662,
+            0.9091376826507512,
+            0.8816588383549089
+        ],
+        "reference_length": 11844,
+        "translation_length": 11714
+    },
+    "predict_gen_len": 17.151,
+    "predict_loss": 0.22663690149784088,
+    "predict_rouge": {
+        "rouge1": 0.9678540883173316,
+        "rouge2": 0.9342350358425744,
+        "rougeL": 0.9668489512363027,
+        "rougeLsum": 0.9667067112559697
+    },
+    "predict_runtime": 37.4185,
+    "predict_sacrebleu": {
+        "bp": 0.9889635221049743,
+        "counts": [
+            11403,
+            10051,
+            8835,
+            7696
+        ],
+        "precisions": [
+            97.34505719651699,
+            93.81183498226619,
+            90.91376826507512,
+            88.16588383549089
+        ],
+        "ref_len": 11844,
+        "score": 91.47569399380058,
+        "sys_len": 11714,
+        "totals": [
+            11714,
+            10714,
+            9718,
+            8729
+        ]
+    },
+    "predict_samples_per_second": 26.725,
+    "predict_steps_per_second": 1.684,
+    "total_flos": 4787663717007360.0,
+    "train_loss": 0.9169419399389984,
+    "train_runtime": 3840.1457,
+    "train_samples_per_second": 64.615,
+    "train_steps_per_second": 4.039
+}

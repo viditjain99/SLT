@@ -1,0 +1,3 @@
+venv/
+wandb/
+result/pytorch_model.bin
