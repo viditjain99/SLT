@@ -1,3 +1,7 @@
 venv/
 wandb/
 result/pytorch_model.bin
+env/
+
+.DS_Store
+.ipynb_checkpoints/
