@@ -2,6 +2,10 @@ venv/
 wandb/
 result/pytorch_model.bin
 env/
-
+mixed_finetuning_ood/
+mixed_finetuning_ood_scaled/
+result/
+result_preprocessed_data/
+results/
 .DS_Store
 .ipynb_checkpoints/

@@ -36,8 +36,8 @@ from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
 # %%
-os.system("python utils/jsonize.py --dataset aslg --mode train dev test --src en --tgt gloss.asl")
-os.system("python utils/jsonize.py --dataset ncslgr --mode train dev test --src en --tgt gloss.asl")
+os.system("python utils/jsonize.py --dataset aslg --mode train dev test --src gloss.asl --tgt en")
+os.system("python utils/jsonize.py --dataset ncslgr --mode train dev test --src gloss.asl --tgt en")
 
 # %%
 # f1 = open("./data/aslg.train.en", 'r', encoding = 'utf-8-sig').readlines()
@@ -238,7 +238,7 @@ class DataTrainingArguments:
     )
 
     def __post_init__(self):
-        if self.dataset_name is None and self.train_file is None and self.validation_file is None:
+        if self.dataset_name is None and self.ood_train_file is None and self.ood_validation_file is None:
             raise ValueError("Need either a dataset name or a training/validation file.")
         elif self.src_lang is None or self.tgt_lang is None:
             raise ValueError("Need to specify the source language and the target language.")
@@ -247,11 +247,11 @@ class DataTrainingArguments:
         # many jsonlines files actually have a .json extension
         valid_extensions = ["json", "jsonl"]
 
-        if self.train_file is not None:
-            extension = self.train_file.split(".")[-1]
+        if self.ood_train_file is not None:
+            extension = self.ood_train_file.split(".")[-1]
             assert extension in valid_extensions, "`train_file` should be a jsonlines file."
-        if self.validation_file is not None:
-            extension = self.validation_file.split(".")[-1]
+        if self.ood_validation_file is not None:
+            extension = self.ood_validation_file.split(".")[-1]
             assert extension in valid_extensions, "`validation_file` should be a jsonlines file."
         if self.val_max_target_length is None:
             self.val_max_target_length = self.max_target_length
@@ -265,7 +265,7 @@ id_dataset = "ncslgr"
 # %%
 
 model_args, data_args, training_args = parser.parse_args_into_dataclasses([
-    "--train_stage", "mixed",  # ood/mixed/id
+    "--train_stage", "id",  # ood/mixed/id
     "--ood_train_file", f"./data/train_{ood_dataset}.json",
     "--ood_validation_file", f"./data/dev_{ood_dataset}.json",
     "--ood_test_file", f"./data/test_{ood_dataset}.json",
@@ -273,14 +273,13 @@ model_args, data_args, training_args = parser.parse_args_into_dataclasses([
     "--id_validation_file", f"./data/dev_{id_dataset}.json",
     "--id_test_file", f"./data/test_{id_dataset}.json",
     "--model_name_or_path", "none", 
-    "--output_dir" , "/results",
+    "--output_dir" , "./results",
     "--src_lang", "gl_EN",
     "--tgt_lang", "en_XX",
     "--vocab_size", "6000",
     "--max_source_length", "50",
     "--max_target_length", "50",
     "--ignore_pad_token_for_loss", "True",
-    "--output_dir","./result",
     "--generation_max_length", "50",
     "--generation_num_beams", "1",
     "--predict_with_generate", "True",
@@ -295,6 +294,8 @@ model_args, data_args, training_args = parser.parse_args_into_dataclasses([
     "--logging_steps", "100",
     "--report_to", "wandb",
     ])
+
+training_args.output_dir = os.path.join(training_args.output_dir, data_args.train_stage)
 
 # %%
 extension = "json"
@@ -334,25 +335,25 @@ src_labels = tokenizer(text = src_text, max_length = 10, padding = "max_length",
 print(tokenizer.convert_ids_to_tokens(list(src_labels[0])))
 
 tgt_text = total_train_dataset[0]["translation"][data_args.tgt_lang]
-print(f"Example target language text: {src_text}")
-tgt_labels = tokenizer(target_text = src_text, max_length = 10, padding = "max_length", return_tensors="pt").input_ids
+print(f"Example target language text: {tgt_text}")
+tgt_labels = tokenizer(text_target = tgt_text, max_length = 10, padding = "max_length", return_tensors="pt").input_ids
 print(tokenizer.convert_ids_to_tokens(list(tgt_labels[0])))
 print("-"*100 + "\n")
 
 padding = False
 prefix = data_args.source_prefix if data_args.source_prefix is not None else ""
 
-source_lang = data_args.source_lang.split("_")[0]
-target_lang = data_args.target_lang.split("_")[0]
+# source_lang = data_args.source_lang.split("_")[0]
+# target_lang = data_args.target_lang.split("_")[0]
 
 def preprocess_function(examples, domain_tag = None):
-    inputs = [ex[source_lang] for ex in examples["translation"]]
-    targets = [ex[target_lang] for ex in examples["translation"]]
+    inputs = [ex[data_args.src_lang] for ex in examples["translation"]]
+    targets = [ex[data_args.tgt_lang] for ex in examples["translation"]]
     inputs = [prefix + inp for inp in inputs]
     model_inputs = tokenizer(inputs, max_length=data_args.max_source_length, padding=padding, truncation=True)
     if domain_tag:
         for i in range(len(model_inputs["input_ids"])):
-            model_inputs["input_ids"][i] = model_inputs["input_ids"][i][:-1] + tokenizer.convert_tokens_to_ids(domain_tag) + [model_inputs["input_ids"][i][-1]]
+            model_inputs["input_ids"][i] = model_inputs["input_ids"][i][:-1] + tokenizer.convert_tokens_to_ids([domain_tag]) + [model_inputs["input_ids"][i][-1]]
             model_inputs["attention_mask"][i].append(1)
 
     # Tokenize targets with the `text_target` keyword argument
@@ -492,24 +493,24 @@ print("-"*100)
 
 config = MBartConfig()
 
-# EMBEDDING_DIM = 512
-# SCALE_DOWN_FACTOR = 4
+EMBEDDING_DIM = 512
+SCALE_DOWN_FACTOR = 4
 
-# config.d_model = EMBEDDING_DIM
-# config.vocab_size = data_args.vocab_size
-# config.encoder_attention_heads //= SCALE_DOWN_FACTOR
-# config.encoder_ffn_dim //= SCALE_DOWN_FACTOR
-# config.encoder_layers //= SCALE_DOWN_FACTOR
-# config.decoder_attention_heads //= SCALE_DOWN_FACTOR
-# config.decoder_ffn_dim //= SCALE_DOWN_FACTOR
-# config.decoder_layers //= SCALE_DOWN_FACTOR
+config.d_model = EMBEDDING_DIM
+config.vocab_size = data_args.vocab_size
+config.encoder_attention_heads //= SCALE_DOWN_FACTOR
+config.encoder_ffn_dim //= SCALE_DOWN_FACTOR
+config.encoder_layers //= SCALE_DOWN_FACTOR
+config.decoder_attention_heads //= SCALE_DOWN_FACTOR
+config.decoder_ffn_dim //= SCALE_DOWN_FACTOR
+config.decoder_layers //= SCALE_DOWN_FACTOR
 
-# print(config)
+print(config)
 
 model = MBartForConditionalGeneration(config)
 model.resize_token_embeddings(len(tokenizer))
 
-if model_args.model_name_or_path:
+if model_args.model_name_or_path != "none":
     model = model.from_pretrained(model_args.model_name_or_path)
 
 model.config.decoder_start_token_id = tokenizer.convert_tokens_to_ids(data_args.tgt_lang)
@@ -568,7 +569,7 @@ set_seed(training_args.seed)
 
 # %%
 training_args.max_steps = -1
-training_args.num_train_epochs = 3
+training_args.num_train_epochs = 50
 
 
 # Initialize our Trainer

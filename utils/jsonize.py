@@ -15,14 +15,14 @@ args = parser.parse_args()
 data_dir = "./data"
 
 lang_code_map = {
-  "gloss.asl" : "gl",
-  "en": "en"
+  "gloss.asl" : "gl_EN",
+  "en": "en_XX"
 }
 
 for mode in args.mode:
   src_filename = "{ds}.{mode}.{src}".format(ds = args.dataset, mode=mode, src=args.src)
 
-  tgt_filename = "{ds}.{mode}_processed.{src}".format(ds = args.dataset,mode=mode, src=args.tgt)
+  tgt_filename = "{ds}.{mode}.{src}".format(ds = args.dataset,mode=mode, src=args.tgt)
 
   src_path = os.path.join(data_dir, src_filename)
   tgt_path = os.path.join(data_dir, tgt_filename)
@@ -32,14 +32,14 @@ for mode in args.mode:
 
   assert len(src_lines)==len(tgt_lines)
 
-  output_filename = os.path.join(data_dir, "{mode}_{args.dataset}.json".format(mode=mode))
+  output_filename = os.path.join(data_dir, "{mode}_{ds}.json".format(mode=mode, ds=args.dataset))
   output_file = open(output_filename, 'w')
 
   # examples = []
   for i, line in enumerate(src_lines):
     example = {'translation': {}}
-    example['translation'][lang_code_map[args.src]] = line.strip()
-    example['translation'][lang_code_map[args.tgt]] = tgt_lines[i].strip()
+    example['translation'][lang_code_map[args.src]] = line.strip().lower()
+    example['translation'][lang_code_map[args.tgt]] = tgt_lines[i].strip().lower()
 
     # examples.append(example)
 
