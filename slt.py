@@ -36,8 +36,8 @@ from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
 # %%
-os.system("python utils/jsonize.py --dataset aslg --mode train dev test --src gloss.asl --tgt en")
-os.system("python utils/jsonize.py --dataset ncslgr --mode train dev test --src gloss.asl --tgt en")
+os.system("python utils/jsonize.py --dataset aslg --mode train dev test --src en --tgt gloss.asl")
+os.system("python utils/jsonize.py --dataset ncslgr --mode train dev test --src en --tgt gloss.asl")
 
 # %%
 # f1 = open("./data/aslg.train.en", 'r', encoding = 'utf-8-sig').readlines()
@@ -272,10 +272,10 @@ model_args, data_args, training_args = parser.parse_args_into_dataclasses([
     "--id_train_file", f"./data/train_{id_dataset}.json",
     "--id_validation_file", f"./data/dev_{id_dataset}.json",
     "--id_test_file", f"./data/test_{id_dataset}.json",
-    "--model_name_or_path", "none", 
+    "--model_name_or_path", "facebook/mbart-large-cc25", 
     "--output_dir" , "./results",
-    "--src_lang", "gl_EN",
-    "--tgt_lang", "en_XX",
+    "--src_lang", "en_XX",
+    "--tgt_lang", "gl_EN",
     "--vocab_size", "6000",
     "--max_source_length", "50",
     "--max_target_length", "50",
@@ -307,7 +307,7 @@ id_train_dataset = load_dataset( extension, data_files = data_args.id_train_file
 id_validation_dataset = load_dataset( extension, data_files = data_args.id_validation_file, split = "train" )
 id_test_dataset = load_dataset( extension, data_files = data_args.id_test_file, split = "train" )
 
-total_train_dataset = concatenate_datasets([ood_train_dataset, id_train_dataset])
+total_train_dataset = concatenate_datasets([id_train_dataset])
 # %%
 def get_training_corpus():
     return (
@@ -493,25 +493,26 @@ print("-"*100)
 
 config = MBartConfig()
 
-EMBEDDING_DIM = 512
-SCALE_DOWN_FACTOR = 4
+# EMBEDDING_DIM = 512
+# SCALE_DOWN_FACTOR = 4
 
-config.d_model = EMBEDDING_DIM
-config.vocab_size = data_args.vocab_size
-config.encoder_attention_heads //= SCALE_DOWN_FACTOR
-config.encoder_ffn_dim //= SCALE_DOWN_FACTOR
-config.encoder_layers //= SCALE_DOWN_FACTOR
-config.decoder_attention_heads //= SCALE_DOWN_FACTOR
-config.decoder_ffn_dim //= SCALE_DOWN_FACTOR
-config.decoder_layers //= SCALE_DOWN_FACTOR
+# config.d_model = EMBEDDING_DIM
+# config.vocab_size = data_args.vocab_size
+# config.encoder_attention_heads = 8
+# config.encoder_ffn_dim = 2048
+# config.encoder_layers = 2
+# config.decoder_attention_heads = 8
+# config.decoder_ffn_dim = 2048
+# config.decoder_layers = 2
 
 print(config)
 
 model = MBartForConditionalGeneration(config)
-model.resize_token_embeddings(len(tokenizer))
 
 if model_args.model_name_or_path != "none":
     model = model.from_pretrained(model_args.model_name_or_path)
+
+model.resize_token_embeddings(len(tokenizer))
 
 model.config.decoder_start_token_id = tokenizer.convert_tokens_to_ids(data_args.tgt_lang)
 
